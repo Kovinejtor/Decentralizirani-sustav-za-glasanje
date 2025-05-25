@@ -73,16 +73,19 @@ onMounted(async () => {
 
 async function ucitajKandidate() {
   const broj = await contract.brojKandidata()
+  console.log("Broj kandidata:", broj)
   const lista = []
   for (let i = 0; i < broj; i++) {
     const k = await contract.kandidati(i)
+    console.log(`Kandidat ${i}:`, k)
     lista.push({ id: k[0], ime: k[1], brojGlasova: k[2] })
   }
   kandidati.value = lista
 }
 
 async function glasaj(id) {
-  await contract.glasaj(id)
+  const tx = await contract.glasaj(id)
+  await tx.wait()
   await ucitajKandidate()
 }
 
@@ -91,13 +94,19 @@ async function dohvatiPobjednika() {
 }
 
 async function pokreniGlasanje() {
-  await contract.pokreniGlasanje()
+  const tx = await contract.pokreniGlasanje()
+  await tx.wait()
 }
 
 async function dodajKandidata() {
   if (!noviKandidat.value) return
-  await contract.dodajKandidata(noviKandidat.value)
+
+  const tx = await contract.dodajKandidata(noviKandidat.value)
+  await tx.wait()
+
   await ucitajKandidate()
   noviKandidat.value = ""
 }
+
+
 </script>

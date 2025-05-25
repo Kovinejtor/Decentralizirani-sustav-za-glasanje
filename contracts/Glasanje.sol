@@ -53,12 +53,11 @@ contract DecentraliziranoGlasanje {
         glasanjeAktivno = false;
     }
 
-    function glasaj(uint _kandidatId) public samoKadAktivno {
-        require(biraci[msg.sender].registriran, "Niste registrirani.");
+    function glasaj(uint _kandidatId) public {
         require(!biraci[msg.sender].glasao, "Vec ste glasali.");
-        require(_kandidatId < brojKandidata, "Neispravan kandidat.");
-
+        
         biraci[msg.sender].glasao = true;
+        biraci[msg.sender].registriran = true; // automatski se postavlja kao registriran
         kandidati[_kandidatId].brojGlasova++;
     }
 

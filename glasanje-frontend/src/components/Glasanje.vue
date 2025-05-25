@@ -39,57 +39,25 @@ const noviKandidat = ref('');
 const pobjednik = ref(null)
 const jeAdmin = ref(false)
 
-
 const contractAddress = contractMeta.contractAddress
-
-if (!ethers.isAddress(contractAddress)) {
-  console.error("Neispravna adresa ugovora");
-}
 
 let contract
 
 async function switchToLocalhostNetwork() {
-  const targetChainId = '0x7a69'; // hex za 31337
+  const targetChainId = '0x7a69'
+  const currentChainId = await window.ethereum.request({ method: 'eth_chainId' })
 
-  try {
-    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-
-    if (currentChainId !== targetChainId) {
-      // Pokušaj prebacivanja
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: targetChainId }],
-      });
-    }
-  } catch (switchError) {
-    // Ako mreža još nije dodana, pokušaj je dodati
-    if (switchError.code === 4902) {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: targetChainId,
-            chainName: 'Localhost 8545',
-            rpcUrls: ['http://127.0.0.1:8545'],
-            nativeCurrency: {
-              name: 'ETH',
-              symbol: 'ETH',
-              decimals: 18,
-            },
-          }],
-        });
-      } catch (addError) {
-        console.error("Greška prilikom dodavanja mreže:", addError);
-      }
-    } else {
-      console.error("Greška prilikom prebacivanja mreže:", switchError);
-    }
+  if (currentChainId !== targetChainId) {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: targetChainId }],
+    })
   }
 }
 
-
 onMounted(async () => {
-  await switchToLocalhostNetwork();
+  await switchToLocalhostNetwork()
+
   const provider = new ethers.BrowserProvider(window.ethereum)
   const signer = await provider.getSigner()
 
@@ -97,8 +65,8 @@ onMounted(async () => {
 
   const userAddress = await signer.getAddress()
   const adminAddress = await contract.administrator()
-  jeAdmin.value = userAddress.toLowerCase() === adminAddress.toLowerCase()
 
+  jeAdmin.value = userAddress.toLowerCase() === adminAddress.toLowerCase()
 
   await ucitajKandidate()
 })
@@ -114,40 +82,22 @@ async function ucitajKandidate() {
 }
 
 async function glasaj(id) {
-  try {
-    await contract.glasaj(id)
-    await ucitajKandidate()
-  } catch (e) {
-    alert("Greška: " + e.message)
-  }
+  await contract.glasaj(id)
+  await ucitajKandidate()
 }
 
 async function dohvatiPobjednika() {
-  try {
-    pobjednik.value = await contract.dohvatiPobjednika()
-  } catch (e) {
-    alert("Ne možeš još dohvatiti pobjednika.")
-  }
+  pobjednik.value = await contract.dohvatiPobjednika()
 }
 
 async function pokreniGlasanje() {
-  try {
-    await contract.pokreniGlasanje()
-    alert("Glasanje je pokrenuto!")
-  } catch (e) {
-    alert("Greška: " + e.message)
-  }
+  await contract.pokreniGlasanje()
 }
 
-
 async function dodajKandidata() {
-  try {
-    if (!noviKandidat.value) return alert("Unesi ime kandidata")
-    await contract.dodajKandidata(noviKandidat.value)
-    await ucitajKandidate()
-    noviKandidat.value = ""
-  } catch (e) {
-    alert("Greška: " + e.message)
-  }
+  if (!noviKandidat.value) return
+  await contract.dodajKandidata(noviKandidat.value)
+  await ucitajKandidate()
+  noviKandidat.value = ""
 }
 </script>

@@ -40,6 +40,14 @@ contract DecentraliziranoGlasanje {
         brojKandidata++;
     }
 
+    function obrisiKandidate() public samoAdmin {
+        for (uint i = 0; i < brojKandidata; i++) {
+            delete kandidati[i];
+        }
+        brojKandidata = 0;
+    }
+
+
     function registrirajBiraca(address _birac) public samoAdmin {
         require(!biraci[_birac].registriran, "Vec registriran.");
         biraci[_birac] = Birac(true, false);
@@ -53,13 +61,14 @@ contract DecentraliziranoGlasanje {
         glasanjeAktivno = false;
     }
 
-    function glasaj(uint _kandidatId) public {
+    function glasaj(uint _kandidatId) public samoKadAktivno {
         require(!biraci[msg.sender].glasao, "Vec ste glasali.");
         
         biraci[msg.sender].glasao = true;
-        biraci[msg.sender].registriran = true; // automatski se postavlja kao registriran
+        biraci[msg.sender].registriran = true;
         kandidati[_kandidatId].brojGlasova++;
     }
+
 
     function dohvatiPobjednika() public view returns (string memory ime) {
         require(!glasanjeAktivno, "Glasanje je jos aktivno.");

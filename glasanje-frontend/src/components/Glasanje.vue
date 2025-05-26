@@ -1,9 +1,10 @@
 <template>
   <div class="p-6 max-w-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Decentralizirano Glasanje</h1>
+    <h1 class="text-4xl font-bold mb-4">Decentralizirano Glasanje</h1>
     <div v-if="jeAdmin" class="mb-4 space-y-2">
         <input v-model="noviKandidat" class="border p-1 rounded" placeholder="Unesi ime kandidata" />
         <button @click="dodajKandidata" class="bg-blue-600 text-white px-3 py-1 rounded">Dodaj kandidata</button>
+        <button @click="obrisiKandidate" class="bg-gray-700 text-white px-3 py-1 rounded">Obriši sve kandidate</button>
         <br />
         <button @click="pokreniGlasanje" class="bg-yellow-500 text-white px-3 py-1 rounded">Pokreni glasanje</button>
     </div>
@@ -17,7 +18,9 @@
         >Glasaj</button>
       </div>
 
-      <div class="mt-6">
+      <button @click="zaustaviGlasanje" class="bg-red-600 text-white px-3 py-1 rounded">Zaustavi glasanje</button>
+
+      <div class="mt-16">
         <p><strong>Pobjednik:</strong> {{ pobjednik || '—' }}</p>
         <button
           class="mt-2 bg-green-500 text-white px-3 py-1 rounded"
@@ -108,5 +111,16 @@ async function dodajKandidata() {
   noviKandidat.value = ""
 }
 
+async function obrisiKandidate() {
+  const tx = await contract.obrisiKandidate()
+  await tx.wait()
+  await ucitajKandidate()
+}
+
+
+async function zaustaviGlasanje() {
+  const tx = await contract.zaustaviGlasanje()
+  await tx.wait()
+}
 
 </script>

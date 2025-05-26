@@ -137,6 +137,13 @@ export const glasanjeAbi = [
   },
   {
     "inputs": [],
+    "name": "obrisiKandidate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "pokreniGlasanje",
     "outputs": [],
     "stateMutability": "nonpayable",

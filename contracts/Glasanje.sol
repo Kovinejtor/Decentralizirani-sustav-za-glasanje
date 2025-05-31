@@ -19,6 +19,8 @@ contract DecentraliziranoGlasanje {
     mapping(uint => Kandidat) public kandidati;
     uint public brojKandidata;
 
+    address[] public listaBiraca; // Dodano: da znamo koje birace resetirati
+
     bool public glasanjeAktivno;
 
     constructor() {
@@ -47,18 +49,13 @@ contract DecentraliziranoGlasanje {
         brojKandidata = 0;
     }
 
-
-    function registrirajBiraca(address _birac) public samoAdmin {
-        require(!biraci[_birac].registriran, "Vec registriran.");
-        biraci[_birac] = Birac(true, false);
-    }
-
     function pokreniGlasanje() public samoAdmin {
         glasanjeAktivno = true;
     }
 
     function zaustaviGlasanje() public samoAdmin {
         glasanjeAktivno = false;
+        resetirajBirece(); // Resetiraj sve da mogu ponovno glasati
     }
 
     function glasaj(uint _kandidatId) public samoKadAktivno {
@@ -66,9 +63,14 @@ contract DecentraliziranoGlasanje {
         
         biraci[msg.sender].glasao = true;
         biraci[msg.sender].registriran = true;
+
+        // Ako je prvi put glasao dodaj ga u listu
+        if (!jeNaListi(msg.sender)) {
+            listaBiraca.push(msg.sender);
+        }
+
         kandidati[_kandidatId].brojGlasova++;
     }
-
 
     function dohvatiPobjednika() public view returns (string memory ime) {
         require(!glasanjeAktivno, "Glasanje je jos aktivno.");
@@ -83,5 +85,22 @@ contract DecentraliziranoGlasanje {
         }
 
         return kandidati[pobjednikId].ime;
+    }
+
+    function resetirajBirece() internal {
+        for (uint i = 0; i < listaBiraca.length; i++) {
+            biraci[listaBiraca[i]].glasao = false;
+            biraci[listaBiraca[i]].registriran = false;
+        }
+        delete listaBiraca; // Isprazni listu
+    }
+
+    function jeNaListi(address _addr) internal view returns (bool) {
+        for (uint i = 0; i < listaBiraca.length; i++) {
+            if (listaBiraca[i] == _addr) {
+                return true;
+            }
+        }
+        return false;
     }
 }

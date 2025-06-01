@@ -19,9 +19,10 @@ contract DecentraliziranoGlasanje {
     mapping(uint => Kandidat) public kandidati;
     uint public brojKandidata;
 
-    address[] public listaBiraca; // Dodano: da znamo koje birace resetirati
+    address[] public listaBiraca; 
 
     bool public glasanjeAktivno;
+    string public zadnjiPobjednik;
 
     constructor() {
         administrator = msg.sender;
@@ -49,13 +50,20 @@ contract DecentraliziranoGlasanje {
         brojKandidata = 0;
     }
 
+    function obrisiKandidata(uint _id) public samoAdmin {
+        require(_id < brojKandidata, "Neispravan ID");
+        delete kandidati[_id];
+    }
+
     function pokreniGlasanje() public samoAdmin {
         glasanjeAktivno = true;
     }
 
     function zaustaviGlasanje() public samoAdmin {
         glasanjeAktivno = false;
-        resetirajBirece(); // Resetiraj sve da mogu ponovno glasati
+        resetirajBirece(); 
+        zadnjiPobjednik = dohvatiPobjednika();
+        obrisiKandidate();
     }
 
     function glasaj(uint _kandidatId) public samoKadAktivno {
@@ -64,12 +72,15 @@ contract DecentraliziranoGlasanje {
         biraci[msg.sender].glasao = true;
         biraci[msg.sender].registriran = true;
 
-        // Ako je prvi put glasao dodaj ga u listu
         if (!jeNaListi(msg.sender)) {
             listaBiraca.push(msg.sender);
         }
 
         kandidati[_kandidatId].brojGlasova++;
+    }
+
+    function dohvatiZadnjegPobjednika() public view returns (string memory) {
+        return zadnjiPobjednik;
     }
 
     function dohvatiPobjednika() public view returns (string memory ime) {
@@ -92,7 +103,7 @@ contract DecentraliziranoGlasanje {
             biraci[listaBiraca[i]].glasao = false;
             biraci[listaBiraca[i]].registriran = false;
         }
-        delete listaBiraca; // Isprazni listu
+        delete listaBiraca; 
     }
 
     function jeNaListi(address _addr) internal view returns (bool) {

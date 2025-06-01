@@ -81,6 +81,19 @@ export const glasanjeAbi = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "dohvatiZadnjegPobjednika",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -155,6 +168,19 @@ export const glasanjeAbi = [
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      }
+    ],
+    "name": "obrisiKandidata",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "obrisiKandidate",
     "outputs": [],
@@ -166,6 +192,19 @@ export const glasanjeAbi = [
     "name": "pokreniGlasanje",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "zadnjiPobjednik",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

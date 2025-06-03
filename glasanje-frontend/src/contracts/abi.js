@@ -82,6 +82,36 @@ export const glasanjeAbi = [
   },
   {
     "inputs": [],
+    "name": "dohvatiSveKandidate",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "ime",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "brojGlasova",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DecentraliziranoGlasanje.Kandidat[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "dohvatiZadnjegPobjednika",
     "outputs": [
       {

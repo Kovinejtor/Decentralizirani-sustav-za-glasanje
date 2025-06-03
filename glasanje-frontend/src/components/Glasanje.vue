@@ -3,45 +3,54 @@
     <div class="w-full max-w-6xl bg-gray-900 rounded-lg p-8 shadow-lg flex flex-col items-center">
       <h1 class="text-4xl font-bold mb-8">Decentralizirano glasanje</h1>
 
-      <div v-if="jeAdmin" class="flex flex-wrap gap-4 justify-center mt-10">
-        <input 
-          v-model="noviKandidat" 
-          :disabled="glasanjeAktivno"
-          class="border border-gray-600 bg-gray-800 text-white px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Unesi ime kandidata" 
-        />
+      <div v-if="jeAdmin" class="flex flex-col items-center gap-4 mt-10">
+        <div class="flex flex-wrap gap-4 justify-center items-center">
+          <div class="flex flex-col mt-6">
+            <input 
+              v-model="noviKandidat" 
+              :disabled="glasanjeAktivno"
+              class="border border-gray-600 bg-gray-800 text-white px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Unesi ime kandidata" 
+            />
+            <div class="h-5 mt-1 text-center">
+              <span v-if="greskaPoruka" class="text-red-500 text-sm">
+                {{ greskaPoruka }}
+              </span>
+            </div>
+          </div>
 
-        <button 
-          @click="dodajKandidata" 
-          :disabled="glasanjeAktivno" 
-          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Dodaj kandidata
-        </button>
+          <button 
+            @click="dodajKandidata" 
+            :disabled="glasanjeAktivno" 
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Dodaj kandidata
+          </button>
 
-        <button 
-          @click="obrisiKandidate" 
-          :disabled="kandidati.length === 0 || glasanjeAktivno" 
-          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Obriši sve kandidate
-        </button>
+          <button 
+            @click="obrisiKandidate" 
+            :disabled="kandidati.length === 0 || glasanjeAktivno" 
+            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Obriši sve kandidate
+          </button>
 
-        <button 
-          @click="pokreniGlasanje" 
-          :disabled="glasanjeAktivno || kandidati.length === 0" 
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Pokreni glasanje
-        </button>
+          <button 
+            @click="pokreniGlasanje" 
+            :disabled="glasanjeAktivno || kandidati.length === 0" 
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Pokreni glasanje
+          </button>
 
-        <button 
-          @click="zaustaviGlasanje" 
-          :disabled="!glasanjeAktivno" 
-          class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Zaustavi glasanje
-        </button>
+          <button 
+            @click="zaustaviGlasanje" 
+            :disabled="!glasanjeAktivno" 
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Zaustavi glasanje
+          </button>
+        </div>
       </div>
     </div>
 
@@ -77,7 +86,7 @@
           <button
             class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
             @click="glasaj(k.id)"
-            :disabled="!glasanjeAktivno"
+            :disabled="!glasanjeAktivno || jeGlasao"
           >
             Glasaj
           </button>
@@ -97,14 +106,18 @@
         </button>
       </p>
     </div>
+    <div v-if="jeGlasao" class="mt-8 text-center">
+      <p class="text-xl font-semibold text-green-400">Hvala Vam na glasanju!</p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { ethers } from 'ethers'
 import { glasanjeAbi } from '../contracts/abi.js'
 import contractMeta from '../contracts/contract-address.json'
+import { watch } from 'vue'
 
 const kandidati = ref([])
 const noviKandidat = ref('')
@@ -113,9 +126,20 @@ const jeAdmin = ref(false)
 const glasanjeAktivno = ref(false)
 const showDownloadButton = ref(false)
 const savedResults = ref([])
+const greskaPoruka = ref('')
+const jeGlasao = ref(false)
+const intervalId = ref(null)
 
 const contractAddress = contractMeta.contractAddress
 let contract
+
+watch([glasanjeAktivno, kandidati], ([novoGlasanjeAktivno, novaListaKandidata], [prethodnoAktivno]) => {
+  if (prethodnoAktivno === false && novoGlasanjeAktivno && novaListaKandidata.length > 0) {
+    pobjednik.value = null
+    savedResults.value = []
+    showDownloadButton.value = false
+  }
+})
 
 async function switchToLocalhostNetwork() {
   const targetChainId = '0x7a69'
@@ -144,6 +168,38 @@ onMounted(async () => {
 
   await ucitajKandidate()
   await ucitajStanje()
+  
+  intervalId.value = setInterval(async () => {
+    const aktivnoPromise = contract.glasanjeAktivno()
+    const kandidatiPromise = ucitajKandidate()
+
+    const stanje = await aktivnoPromise
+    if (glasanjeAktivno.value && !stanje) {
+      pobjednik.value = await contract.dohvatiZadnjegPobjednika()
+
+      const kandidatiSaServera = await contract.dohvatiSveKandidate()
+      const lista = kandidatiSaServera.map(k => ({
+        id: Number(k.id),
+        ime: k.ime,
+        brojGlasova: Number(k.brojGlasova)
+      }))
+      lista.sort((a, b) => b.brojGlasova - a.brojGlasova)
+      savedResults.value = lista
+      showDownloadButton.value = true
+
+      kandidati.value = []  
+    }
+    glasanjeAktivno.value = stanje
+
+    await kandidatiPromise
+    await provjeriJeLiGlasao()
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
 })
 
 async function ucitajKandidate() {
@@ -158,30 +214,65 @@ async function ucitajKandidate() {
   kandidati.value = lista
 }
 
+
+async function provjeriJeLiGlasao() {
+  try {
+    if (jeAdmin.value) return; 
+    const userAddress = await window.ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => accounts[0]);
+    const birac = await contract.biraci(userAddress);
+    jeGlasao.value = birac.glasao;
+  } catch (error) {
+    console.error('Greška prilikom provjere da li je korisnik glasao:', error);
+  }
+}
+
 async function ucitajStanje() {
-  glasanjeAktivno.value = await contract.glasanjeAktivno()
+  const trenutnoAktivno = await contract.glasanjeAktivno()
+
+  glasanjeAktivno.value = trenutnoAktivno
+  await provjeriJeLiGlasao()
+}
+
+
+async function pokreniGlasanje() {
+  const tx = await contract.pokreniGlasanje()
+  await tx.wait()
+
+  pobjednik.value = null
+  savedResults.value = []
+  showDownloadButton.value = false
+
+  await ucitajStanje()
 }
 
 async function glasaj(id) {
   const tx = await contract.glasaj(id)
   await tx.wait()
+  jeGlasao.value = true  
   await ucitajKandidate()
-}
-
-async function pokreniGlasanje() {
-  const tx = await contract.pokreniGlasanje()
-  await tx.wait()
-  await ucitajStanje()
 }
 
 async function dodajKandidata() {
   if (!noviKandidat.value) return
 
-  pobjednik.value = null
-  showDownloadButton.value = false
-  savedResults.value = []
+  const postoji = kandidati.value.some(k => k.ime.toLowerCase() === noviKandidat.value.trim().toLowerCase())
 
-  const tx = await contract.dodajKandidata(noviKandidat.value)
+  if (postoji) {
+    greskaPoruka.value = 'Kandidat s tim imenom već postoji.'
+    return
+  }
+
+  if (kandidati.value.length === 0 && savedResults.value.length > 0) {
+    const obrisi = await contract.obrisiKandidate()
+    await obrisi.wait()
+    savedResults.value = []     
+    showDownloadButton.value = false
+    pobjednik.value = null
+  }
+
+  greskaPoruka.value = ''
+
+  const tx = await contract.dodajKandidata(noviKandidat.value.trim())
   await tx.wait()
 
   await ucitajKandidate()
@@ -214,8 +305,13 @@ async function zaustaviGlasanje() {
   await tx.wait()
   await ucitajStanje()
 
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
+
   pobjednik.value = await contract.dohvatiZadnjegPobjednika()
   kandidati.value = []
+  jeGlasao.value = false
 }
 
 function downloadCSV() {

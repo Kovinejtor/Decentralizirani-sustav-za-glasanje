@@ -63,7 +63,6 @@ contract DecentraliziranoGlasanje {
         glasanjeAktivno = false;
         resetirajBirece(); 
         zadnjiPobjednik = dohvatiPobjednika();
-        obrisiKandidate();
     }
 
     function glasaj(uint _kandidatId) public samoKadAktivno {
@@ -114,4 +113,13 @@ contract DecentraliziranoGlasanje {
         }
         return false;
     }
+
+    function dohvatiSveKandidate() public view returns (Kandidat[] memory) {
+        Kandidat[] memory sviKandidati = new Kandidat[](brojKandidata);
+        for (uint i = 0; i < brojKandidata; i++) {
+            sviKandidati[i] = kandidati[i];
+        }
+        return sviKandidati;
+    }   
+
 }
